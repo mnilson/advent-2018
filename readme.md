@@ -1,0 +1,1 @@
+A project for tracking my progress against https://adventofcode.com/2018/. This year I am attempting it with Python 3, which is a relatively new language to me.
