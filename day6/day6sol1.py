@@ -1,3 +1,4 @@
+from string import ascii_lowercase
 from string import ascii_uppercase
 
 infinite = set()
@@ -6,6 +7,7 @@ coordinates = {}
 lower = (0,0)
 max_x = 0
 max_y = 0
+
 
 def grid_print():
     print('*' * max_x)
@@ -19,6 +21,29 @@ def grid_print():
             else:
                 row += '-'
         print(row)
+
+
+def print_map(id, map):
+    print(('*' * max_x), id, ('*' * max_x))
+
+    print(f'0:0 - {max_x}:{max_y}')
+    print('*' * max_x)
+    for x in range(0, max_x + 1):
+        row = ''
+        for y in range(0, max_y + 1):
+            if (x, y) in map:
+                num = map[(x, y)]
+                if num > 34:
+                    num = ascii_uppercase[num - 34]
+                elif num > 9:
+                    num = ascii_lowercase[num - 9]
+                else:
+                    num = str(num)
+                row += num
+            else:
+                row += '-'
+        print(row)
+
 
 def grow_single(id, coord, growth):
     x = coord[0]
@@ -37,33 +62,51 @@ def grow_single(id, coord, growth):
     return growth
 
 
-def grow(seed_growth):
-    current_growth = {}
-    for coord, id in seed_growth.items():
-        if id == '.':
+def grow_gen_coord(coord, generations_grid, generation):
+    if coord in generations_grid:
+        return generations_grid
+
+    if coord[0] < 0 or coord[1] < 0 or coord[0] > max_x or coord[1] > max_y:
+        return generations_grid
+
+    generations_grid[coord] = generation
+    return generations_grid
+
+
+def grow_gen(generations_grid, generation):
+    #doesn't appear to be hitting all keys for a given generation
+    for coord in generations_grid.keys():
+        if generations_grid[coord] != generation:
             continue
-        grow_id = id.lower()
-        # grow left
-        grow_coord = (coord[0]-1, coord[1])
-        current_growth = grow_single(grow_id, grow_coord, current_growth)
-        # grow right
+        print(generation, coord)
+
+        size = len(generations_grid)
+        grow_coord = (coord[0] - 1, coord[1])
+        generations_grid = grow_gen_coord(grow_coord, generations_grid, generation + 1)
+
         grow_coord = (coord[0] + 1, coord[1])
-        current_growth = grow_single(grow_id, grow_coord, current_growth)
-        # grow up
-        grow_coord = (coord[0], coord[1] - 1)
-        current_growth = grow_single(grow_id, grow_coord, current_growth)
-        # grow down
+        generations_grid = grow_gen_coord(grow_coord, generations_grid, generation + 1)
+
         grow_coord = (coord[0], coord[1] + 1)
-        current_growth = grow_single(grow_id, grow_coord, current_growth)
+        generations_grid = grow_gen_coord(grow_coord, generations_grid, generation + 1)
 
-    if current_growth is None or len(current_growth) == 0:
-        return
-    else:
-        for key, val in current_growth.items():
-            grid[key] = val
-        grow(current_growth)
-        print(grid)
+        grow_coord = (coord[0], coord[1] - 1)
+        generations_grid = grow_gen_coord(grow_coord, generations_grid, generation + 1)
 
+        if (len(generations_grid) == size):
+            #did not grow / done
+            return generations_grid
+        else:
+            return grow_gen(generations_grid, generation+1)
+
+def grow(seed_growth):
+    growth_maps = {}
+    for coord, id in seed_growth.items():
+        gen_zero = {}
+        gen_zero[coord] = 0
+        growth_map = grow_gen(gen_zero, 0)
+        growth_maps[id] = growth_map
+        print_map(id, growth_map)
 
 with open('practice.txt', 'r') as file:
     for num, line in enumerate(file):
@@ -77,6 +120,7 @@ with open('practice.txt', 'r') as file:
 
         coordinates[ascii_uppercase[num]] = (y, x)
         grid[(y, x)] = ascii_uppercase[num]
+        break
 
 
 grid_print()
