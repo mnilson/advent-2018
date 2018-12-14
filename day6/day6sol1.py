@@ -1,6 +1,3 @@
-from collections import defaultdict
-from string import ascii_lowercase
-from string import ascii_uppercase
 
 infinite = set()
 grid = {}
@@ -14,7 +11,7 @@ def grid_print():
     print('*' * max_x)
     print(f'0:0 - {max_x}:{max_y}')
     print('*' * max_x)
-    for x in range(0, max_x + 1):
+    for x in range(0, max_x):
         row = ''
         for y in range(0, max_y):
             if (x, y) in grid:
@@ -29,18 +26,12 @@ def print_map(id, map):
 
     print(f'0:0 - {max_x}:{max_y}')
     print('*' * max_x)
-    for x in range(0, max_x + 1):
+    for x in range(0, max_x):
         row = ''
         for y in range(0, max_y):
             if (x, y) in map:
                 num = map[(x, y)]
-                if num > 34:
-                    num = ascii_uppercase[num - 34]
-                elif num > 9:
-                    num = ascii_lowercase[num - 9]
-                else:
-                    num = str(num)
-                row += num
+                row += str(num)
             else:
                 row += '-'
         print(row)
@@ -55,10 +46,9 @@ def grow_single(id, coord, growth):
     if coord in grid:
         return growth
     print(f"{coord} {growth} {id}")
-    if coord not in growth or growth[coord].lower() == id.lower():
+    if coord not in growth or growth[coord]:
         growth[coord] = id
     else:
-        # this doesn't work - I think I need to grow all coordinates from a given seed and then put . where there are overlapping generation values at a given coordinate
         growth[coord] = '.'
     return growth
 
@@ -76,39 +66,42 @@ def grow_gen_coord(coord, generations_grid, generation):
 
 def grow_gen(generations_grid, generation):
     size = len(generations_grid)
+    new_gen = generation + 1
     coordinates = list(generations_grid.keys())
     for coord in coordinates:
         if generations_grid[coord] != generation:
             continue
 
         grow_coord = (coord[0] - 1, coord[1])
-        generations_grid = grow_gen_coord(grow_coord, generations_grid, generation + 1)
+        generations_grid = grow_gen_coord(grow_coord, generations_grid, new_gen )
 
-        grow_coord = (coord[0] + 1, coord[1])
-        generations_grid = grow_gen_coord(grow_coord, generations_grid, generation + 1)
+        grow_coord = (coord[0], coord[1])
+        generations_grid = grow_gen_coord(grow_coord, generations_grid, new_gen )
 
-        grow_coord = (coord[0], coord[1] + 1)
-        generations_grid = grow_gen_coord(grow_coord, generations_grid, generation + 1)
+        grow_coord = (coord[0], coord[1])
+        generations_grid = grow_gen_coord(grow_coord, generations_grid, new_gen )
 
         grow_coord = (coord[0], coord[1] - 1)
-        generations_grid = grow_gen_coord(grow_coord, generations_grid, generation + 1)
+        generations_grid = grow_gen_coord(grow_coord, generations_grid, new_gen )
 
     if (len(generations_grid) == size):
         #did not grow / done
         return generations_grid
     else:
-        return grow_gen(generations_grid, generation+1)
+        return grow_gen(generations_grid, new_gen)
 
 def grow(seed_growth):
     growth_maps = {}
     for coord, id in seed_growth.items():
+        print(f'growing {id} - {coord}')
         gen_zero = {}
         gen_zero[coord] = 0
         growth_map = grow_gen(gen_zero, 0)
         growth_maps[id] = growth_map
-        # print_map(id, growth_map)
+        print_map(id, growth_map)
+        print(growth_maps)
 
-    for x in range (0, max_x+1):
+    for x in range (0, max_x):
         for y in range(0, max_y):
             best_id = ''
             best_value = 999999
@@ -121,35 +114,37 @@ def grow(seed_growth):
             if best_id == '.':
                 grid[(x,y)] = best_id
             elif best_value > 0:
-                grid[(x,y)] = best_id.lower()
+                grid[(x,y)] = best_id
 
-    for x in range (0, max_x + 1):
+    print('finding infinite coords')
+    for x in range (0, max_x):
         if grid[(x, 0)] == '.':
             continue
         else:
-            infinite.add(grid[(x,0)].upper())
+            infinite.add(grid[(x,0)])
 
     for y in range (0, max_y):
         if grid[(0, y)] == '.':
             continue
         else:
-            infinite.add(grid[(0,y)].upper())
+            infinite.add(grid[(0,y)])
 
-    for x in range (0, max_x + 1):
+    for x in range (0, max_x):
         if grid[(x, max_y-1)] == '.':
             continue
         else:
-            infinite.add(grid[(x,max_y-1)].upper())
+            infinite.add(grid[(x,max_y-1)])
 
     for y in range (0, max_y):
-        if grid[(max_x, y)] == '.':
+        if grid[(max_x-1, y)] == '.':
             continue
         else:
-            infinite.add(grid[(max_x,y)].upper())
+            infinite.add(grid[(max_x-1,y)])
 
 def calc_max():
+    print('calcing max')
     max_counts = {}
-    for x in range (0, max_x + 1):
+    for x in range (0, max_x):
         for y in range(0, max_y):
             val = grid[(x, y)]
             if val == '.':
@@ -160,7 +155,8 @@ def calc_max():
                 max_counts[val] = 1
     return max_counts
 
-with open('workfile.txt', 'r') as file:
+with open('practice.txt', 'r') as file:
+    ix = 0
     for num, line in enumerate(file):
         coords = line.split(", ")
         x = int(coords[0])
@@ -170,18 +166,19 @@ with open('workfile.txt', 'r') as file:
         if y >= max_y:
             max_y = y+1
 
-        coordinates[ascii_uppercase[num]] = (y, x)
-        grid[(y, x)] = ascii_uppercase[num]
+        coordinates[str(ix)] = (x, y)
+        grid[(x, y)] = str(ix)
+        ix += 1
 
 
-grid_print()
+#grid_print()
 grow(grid)
-grid_print()
+#grid_print()
 print(infinite)
 max_counts = calc_max()
 print(max_counts)
 for id, val in max_counts.items():
-    if id.upper() in infinite:
+    if id in infinite:
         continue
     print(f'{id}={val}')
 
