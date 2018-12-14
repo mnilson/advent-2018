@@ -75,10 +75,10 @@ def grow_gen(generations_grid, generation):
         grow_coord = (coord[0] - 1, coord[1])
         generations_grid = grow_gen_coord(grow_coord, generations_grid, new_gen )
 
-        grow_coord = (coord[0], coord[1])
+        grow_coord = (coord[0] + 1, coord[1])
         generations_grid = grow_gen_coord(grow_coord, generations_grid, new_gen )
 
-        grow_coord = (coord[0], coord[1])
+        grow_coord = (coord[0], coord[1] + 1)
         generations_grid = grow_gen_coord(grow_coord, generations_grid, new_gen )
 
         grow_coord = (coord[0], coord[1] - 1)
@@ -98,8 +98,8 @@ def grow(seed_growth):
         gen_zero[coord] = 0
         growth_map = grow_gen(gen_zero, 0)
         growth_maps[id] = growth_map
-        print_map(id, growth_map)
-        print(growth_maps)
+        #print_map(id, growth_map)
+        #print(growth_maps)
 
     for x in range (0, max_x):
         for y in range(0, max_y):
@@ -155,7 +155,7 @@ def calc_max():
                 max_counts[val] = 1
     return max_counts
 
-with open('practice.txt', 'r') as file:
+with open('workfile.txt', 'r') as file:
     ix = 0
     for num, line in enumerate(file):
         coords = line.split(", ")
