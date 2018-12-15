@@ -15,7 +15,7 @@ posts = set()
 graph = defaultdict(list)
 rev_graph = defaultdict(list)
 done = []
-in_progress = []
+in_progress = set()
 to_do = set()
 workers = []
 current_tick = 0
@@ -23,6 +23,10 @@ current_tick = 0
 
 def get_duration(letter):
     return base_seconds + ascii_uppercase.index(letter) + 1
+
+
+def any_free_workers():
+    return free_worker() is not None
 
 
 def free_worker():
@@ -39,42 +43,58 @@ def all_free():
     return False
 
 
-def tick():
-    print(f'ticking {workers}')
-    new_roots = []
+def tick(time):
+    #print(f'ticking {time} {workers}')
+    out = f'ticking {time} '
+    all_bored = True
     for w in workers:
+        if len(w) == 0:
+            out += '.'
         if len(w) > 1:
+            all_bored = False
             w.remove(w[0])
+            out += f'{w[0]}'
         elif len(w) == 1:
+            all_bored = False
             letter = w[0]
-            new_roots.extend(graph[letter])
+            out += f'{w[0]}'
             in_progress.remove(letter)
             w.remove(letter)
-            to_do.remove(letter)
+            done.append(letter)
             print(f'done {letter}')
 
-    if len(new_roots) > 0:
-        print(f'ticked {new_roots}')
-    return new_roots
+    out_done = ' '
+    for d in done:
+        out_done += d
+
+    print(out + out_done)
+    if all_bored:
+        print('Nothing Happening!!!')
+        exit(1)
 
 
 def assign_work(w, letter):
-    in_progress.append(letter)
+    in_progress.add(letter)
+    to_do.remove(letter)
     w.extend([letter] * get_duration(letter))
     # print(f'work assigned: {workers}')
 
 
 def any_letters_ready():
+    return len(ready_letters()) > 0
+
+
+def ready_letters():
+    ready = set()
     for val in to_do:
         finished = True
         for node in rev_graph[val]:
-            if node in in_progress:
-                finished = False
             if node not in done:
                 finished = False
+        # print(f'val {val} f{finished}')
         if finished:
-            return True
-    return False
+            ready.add(val)
+    return ready
 
 
 def next_roots(roots, new_roots):
@@ -89,46 +109,21 @@ def next_roots(roots, new_roots):
     return roots_extend
 
 
-def process(roots, time):
-    orig_size = len(roots)
-    while len(roots) == 0:
-        if len(to_do) == 0:
-            return time, ''
-        time += 1
-        roots.extend(tick())
+def process(time):
+    #
+    # FIXME: it looks like it is processing correctly up until final letter, then it just finishes after first hit (ie only a single iteration of E)
+    #
+    if len(to_do) == 0 and all_free():
+        return time
 
-    new_roots = []
-    while free_worker() is None:
-        time += 1
-        new_roots.extend(tick())
+    while any_free_workers() and any_letters_ready():
+        letters = list(ready_letters())
+        letters.sort()
+        assign_work(free_worker(), letters[0])
 
-    roots.sort()
-    root = None
-    for check in roots:
-        ready = True
-        for node in rev_graph[check]:
-            if node not in done:
-                ready = False
-        if ready:
-            root = check
-            break
-
-    result = ''
-    if root is not None:
-        roots.remove(root)
-        if root not in done:
-            assign_work(free_worker(), root)
-            result = root
-            done.append(root)
-
-    roots = next_roots(roots, new_roots)
-    while any_letters_ready() and free_worker() is not None and len(roots) == orig_size:
-        new_roots = tick()
-        roots = next_roots(roots, new_roots)
-        time += 1
-
-    recurse = process(roots, time)
-    return recurse[0], result + recurse[1]
+    tick(time)
+    time += 1
+    return process(time)
 
 
 with open(filename, 'r') as file:
@@ -150,7 +145,6 @@ for id in range(0, num_workers):
     workers.append(worker)
 
 roots = list(pres.difference(posts))
-print(f'difference: {roots}')
-answer = process(roots, 0)
+answer = process(0)
 print(f'answer {answer}')
 print(current_tick)
