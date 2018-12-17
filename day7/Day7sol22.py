@@ -3,12 +3,12 @@ from string import ascii_uppercase
 
 # CABFDE = 15 seconds
 # 436 Too Low
-filename = 'practice.txt'
-num_workers = 2
-base_seconds = 0
-# filename = 'workfile.txt'
-# num_workers = 5
-# base_seconds = 60
+# filename = 'practice.txt'
+# num_workers = 2
+# base_seconds = 0
+filename = 'workfile.txt'
+num_workers = 5
+base_seconds = 60
 
 pres = set()
 posts = set()
@@ -39,12 +39,11 @@ def free_worker():
 def all_free():
     for w in workers:
         if len(w) > 0:
-            return True
-    return False
+            return False
+    return True
 
 
 def tick(time):
-    #print(f'ticking {time} {workers}')
     out = f'ticking {time} '
     all_bored = True
     for w in workers:
@@ -113,7 +112,7 @@ def process(time):
     #
     # FIXME: it looks like it is processing correctly up until final letter, then it just finishes after first hit (ie only a single iteration of E)
     #
-    if len(to_do) == 0 and all_free():
+    if len(to_do) == 0 and len(in_progress) == 0 and all_free():
         return time
 
     while any_free_workers() and any_letters_ready():
@@ -146,5 +145,6 @@ for id in range(0, num_workers):
 
 roots = list(pres.difference(posts))
 answer = process(0)
+print(done)
 print(f'answer {answer}')
 print(current_tick)
